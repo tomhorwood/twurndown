@@ -1,4 +1,4 @@
-import COMMONMARK_RULES from './commonmark-rules'
+import TW5_RULES from './rules-tw5'
 import Rules from './rules'
 import { extend, trimLeadingNewlines, trimTrailingNewlines } from './utilities'
 import RootNode from './root-node'
@@ -24,14 +24,18 @@ export default function TurndownService (options) {
   if (!(this instanceof TurndownService)) return new TurndownService(options)
 
   var defaults = {
-    rules: COMMONMARK_RULES,
-    headingStyle: 'setext',
-    hr: '* * *',
+    rules: TW5_RULES,
+    headingStyle: 'atx',
+    hr: '---',
     bulletListMarker: '*',
-    codeBlockStyle: 'indented',
+    numberListMarker: '#',
     fence: '```',
-    emDelimiter: '_',
-    strongDelimiter: '**',
+    emDelimiter: '//',
+    strongDelimiter: "''",
+    underscoreDelimiter: '__',
+    strikeDelimiter: '~~',
+    supDelimiter: '^^',
+    subDelimiter: ',,',
     linkStyle: 'inlined',
     linkReferenceStyle: 'full',
     br: '  ',
@@ -210,6 +214,27 @@ function replacementForNode (node) {
 }
 
 /**
+ * Determines the new lines between the current output and the replacement
+ * @private
+ * @param {String} output The current conversion output
+ * @param {String} replacement The string to append to the output
+ * @returns The whitespace to separate the current output and the replacement
+ * @type String
+ */
+
+let leadingNewLinesRegExp = /^\n*/;
+let trailingNewLinesRegExp = /\n*$/;
+function separatingNewlines(output, replacement) {
+    let newlines = [
+        output.match(trailingNewLinesRegExp)[0],
+        replacement.match(leadingNewLinesRegExp)[0]
+    ].sort();
+    let maxNewlines = newlines[newlines.length - 1];
+    return maxNewlines.length < 2 ? maxNewlines : '\n\n'
+}
+
+
+/**
  * Joins replacement to the current output with appropriate number of new lines
  * @private
  * @param {String} output The current conversion output
@@ -221,8 +246,8 @@ function replacementForNode (node) {
 function join (output, replacement) {
   var s1 = trimTrailingNewlines(output)
   var s2 = trimLeadingNewlines(replacement)
-  var nls = Math.max(output.length - s1.length, replacement.length - s2.length)
-  var separator = '\n\n'.substring(0, nls)
+  
+  let separator = separatingNewlines(output, replacement);
 
   return s1 + separator + s2
 }
